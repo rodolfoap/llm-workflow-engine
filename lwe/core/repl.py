@@ -276,7 +276,7 @@ class Repl:
                     sys.exit(0)
 
     def _set_prompt(self, prefix=""):
-        self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}> "
+        self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}: "
 
     def _set_prompt_prefix(self, prefix=""):
         self.prompt_prefix = prefix
