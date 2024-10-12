@@ -133,14 +133,14 @@ def print_status_message(success, message, style=None):
     if style is None:
         style = "bold green" if success else "bold red"
     console.print(message, style=style)
-    print("")
+    ##print("")
 
 
 def print_markdown(output, style=None):
     if isinstance(output, dict):
         output = dict_to_pretty_json(output)
     console.print(Markdown(output), style=style)
-    print("")
+    ##print("")
 
 
 def parse_conversation_ids(id_string):

@@ -1,0 +1,55 @@
+shell:
+  # Customize the prompt prefix, the following token are available:
+  # - $SYSTEM_MESSAGE_ALIAS: The current your system message alias
+  # - $USER: Logged in username
+  # - $MODEL: The LLM model name
+  # - $PRESET_OR_MODEL: The active preset if set, or the LLM model name
+  # - $NEWLINE: Insert a newline
+  # - $TEMPERATURE: The current temperature
+  # - $MAX_SUBMISSION_TOKENS: The maximum number of tokens in a submission
+  # - $CURRENT_CONVERSATION_TOKENS: The token count of the current conversation (only supported for chat models)
+  prompt_prefix: 'T:$TEMPERATURE; MaxTokens:$MAX_SUBMISSION_TOKENS; CurrentTokens:$CURRENT_CONVERSATION_TOKENS; SysMsg:$SYSTEM_MESSAGE_ALIAS; Model:$PRESET_OR_MODEL$NEWLINE'
+  history_file: /tmp/repl_history.log
+
+model:
+  streaming: true
+  default_preset: gpt4o
+  default_system_message: assistant
+  system_message:
+    assistant: "You are a helpful assistant. Do not make introductions or conclusions."
+    programmer: "You are an expert programmer, who responds to questions with brief examples in code."
+
+chat:
+  log:
+    enabled: false
+    filepath: lwe.log
+
+log:
+  console:
+    format: '%(name)s - %(levelname)s - %(message)s'
+    level: ERROR
+
+plugins:
+  enabled:
+    # Core plugins, see README for more details.
+    - echo
+    - examples
+    - provider_chat_ollama
+    - provider_chat_anthropic
+    #- awesome
+    #- database
+    #- data_query
+    #- shell
+    #- zap
+    # Core provider plugins, see README for more details.
+    #- provider_ai21
+    #- provider_cohere
+    #- provider_huggingface_hub
+    #- provider_openai
+
+debug:
+  log:
+    enabled: false
+    filepath: /tmp/lwe-debug.log
+    format: '%(name)s - %(asctime)s - %(levelname)s - %(message)s'
+    level: DEBUG

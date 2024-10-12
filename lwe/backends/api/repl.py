@@ -314,7 +314,7 @@ Before you can start using the shell, you must create a new user.
         prompt_prefix = prompt_prefix.replace(
             "$SYSTEM_MESSAGE_ALIAS", self.backend.system_message_alias or ""
         )
-        return f"{prompt_prefix} "
+        return f"{prompt_prefix}"
 
     def get_model_temperature(self):
         """

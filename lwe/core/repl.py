@@ -181,7 +181,7 @@ class Repl:
         if not success:
             return success, response, user_message
         message, overrides = response
-        print("")
+        ##print("")
         print(message)
         self.log.info("Running template")
         response = self.default(message, **overrides)
@@ -247,12 +247,12 @@ class Repl:
                 return textwrap.dedent(doc)
 
     def help_commands(self):
-        print("")
+        ##print("")
         util.print_markdown(f"#### {self.doc_header}")
-        print("")
+        ##print("")
         for command in self.dashed_commands:
             print(self.get_command_help_brief(command))
-        print("")
+        ##print("")
 
     def help(self, command=""):
         if command:
@@ -276,7 +276,7 @@ class Repl:
                     sys.exit(0)
 
     def _set_prompt(self, prefix=""):
-        self.prompt = f"{self.prompt_prefix}{self.prompt_number}> "
+        self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}> "
 
     def _set_prompt_prefix(self, prefix=""):
         self.prompt_prefix = prefix
@@ -810,11 +810,12 @@ class Repl:
         # TODO: Enable this when o1 models support streaming
         # if self.stream:
             request_overrides["print_stream"] = True
-            print("")
+            ##print("")
             success, response, user_message = self.backend.ask_stream(
                 input, request_overrides=request_overrides
             )
-            print("\n")
+            ##print("\n")
+            print()
             if not success:
                 return success, response, user_message
         else:
@@ -822,7 +823,7 @@ class Repl:
                 input, request_overrides=request_overrides
             )
             if success:
-                print("")
+                ##print("")
                 util.print_markdown(response)
             else:
                 return success, response, user_message
@@ -851,7 +852,8 @@ class Repl:
             except EOFError:
                 break
             if line == "":
-                print("")
+                ##print("")
+                pass
             if line == "/end":
                 break
             prompt += line + "\n"
@@ -1478,9 +1480,10 @@ class Repl:
                     traceback.print_exc()
 
     def cmdloop(self):
-        print("")
-        util.print_markdown("### %s" % self.intro)
+        #print("")
+        #util.print_markdown("### %s" % self.intro)
         while True:
+            util.print_markdown("---")
             self.set_user_prompt()
             try:
                 user_input = self.prompt_session.prompt(
@@ -1502,4 +1505,4 @@ class Repl:
                 util.output_response(exec_prompt_pre_result)
             else:
                 self.run_command(command, argument)
-        print("GoodBye!")
+        util.print_markdown("---")
