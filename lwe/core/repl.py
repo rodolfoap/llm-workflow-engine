@@ -8,6 +8,7 @@ import traceback
 import signal
 import frontmatter
 import pyperclip
+from rich.markdown import Markdown
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -276,7 +277,8 @@ class Repl:
                     sys.exit(0)
 
     def _set_prompt(self, prefix=""):
-        self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}: "
+        #self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}> "
+s        self.prompt = ": "
 
     def _set_prompt_prefix(self, prefix=""):
         self.prompt_prefix = prefix
@@ -1480,11 +1482,11 @@ class Repl:
                     traceback.print_exc()
 
     def cmdloop(self):
-        #print("")
-        #util.print_markdown("### %s" % self.intro)
         while True:
-            util.print_markdown("---")
             self.set_user_prompt()
+            print()
+            print(Markdown(f"[{self.prompt_number}] {self.prompt_prefix}").markup.strip())
+            util.print_markdown("---")
             try:
                 user_input = self.prompt_session.prompt(
                     self.prompt,
@@ -1500,6 +1502,7 @@ class Repl:
                 continue
             except EOFError:
                 break
+            print()
             exec_prompt_pre_result = self.exec_prompt_pre(command, argument)
             if exec_prompt_pre_result:
                 util.output_response(exec_prompt_pre_result)
