@@ -13,6 +13,12 @@ from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 
+# RAP: Disable CTRL-C
+from prompt_toolkit.key_binding import KeyBindings
+bindings = KeyBindings()
+@bindings.add('c-c')
+def _(event): pass
+
 # from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import NestedCompleter, PathCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
@@ -67,6 +73,7 @@ class Repl:
             # so we don't use it. Leaving it here for reference.
             # auto_suggest=AutoSuggestFromHistory(),
             style=self.style,
+	    key_bindings=bindings, # RAP
         )
         self._setup_signal_handlers()
 
@@ -278,7 +285,7 @@ class Repl:
 
     def _set_prompt(self, prefix=""):
         #self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}> "
-s        self.prompt = ": "
+        self.prompt = ": "
 
     def _set_prompt_prefix(self, prefix=""):
         self.prompt_prefix = prefix
