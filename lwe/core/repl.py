@@ -80,7 +80,6 @@ class Repl:
     def initialize_repl(self, config=None):
         self.config = config or Config()
         self.log = Logger(self.__class__.__name__, self.config)
-        self._set_logging()
 
     def reload_repl(self):
         util.print_status_message(True, "Reloading configuration...")
@@ -275,14 +274,6 @@ class Repl:
         else:
             self.help_commands()
 
-    def _set_logging(self):
-        if self.config.get("chat.log.enabled"):
-            log_file = self.config.get("chat.log.filepath")
-            if log_file:
-                if not self._open_log(log_file):
-                    print("\nERROR: could not open log file: %s" % log_file)
-                    sys.exit(0)
-
     def _set_prompt(self, prefix=""):
         #self.prompt = f"[{self.prompt_number}] {self.prompt_prefix}> "
         self.prompt = ": "
@@ -294,16 +285,6 @@ class Repl:
         self.prompt_number += 1
         self.message_map[self.prompt_number] = (self.backend.conversation_id,)
         self._set_prompt()
-
-    def _write_log(self, prompt, response):
-        if self.logfile is not None:
-            self.logfile.write(f"{self.prompt_number}> {prompt}\n\n{response}\n\n")
-            self._write_log_context()
-
-    def _write_log_context(self):
-        if self.logfile is not None:
-            self.logfile.write(f"## context {self.backend.conversation_id}\n")
-            self.logfile.flush()
 
     def build_shell_user_prefix(self):
         return ""
@@ -422,7 +403,6 @@ class Repl:
         self.backend.new_conversation()
         util.print_markdown("* New conversation started.")
         self._update_message_map()
-        self._write_log_context()
 
     def command_delete(self, arg):
         """
@@ -573,7 +553,6 @@ class Repl:
     #         self.backend.conversation_id,
     #     ) = self.message_map[msg_id]
     #     self._update_message_map()
-    #     self._write_log_context()
     #     util.print_markdown(
     #         f"* Prompt {self.prompt_number} will use the context from prompt {arg}."
     #     )
@@ -778,7 +757,6 @@ class Repl:
             if conversation_data:
                 self.backend.switch_to_conversation(conversation_id)
                 self._update_message_map()
-                self._write_log_context()
                 if title:
                     util.print_markdown(f"### Switched to: {title}")
             else:
@@ -797,15 +775,6 @@ class Repl:
         """
         return self.default(input)
 
-    # TODO: Remove this when o1 models support system messages.
-    def is_openai_o1_series(self):
-        if self.backend.provider.name == "provider_chat_openai":
-            customizations = self.backend.provider.get_customizations()
-            model_name = customizations.pop(self.backend.provider.model_property_name, "unknown")
-            if model_name.startswith("o1-"):
-                return True
-        return False
-
     def default(self, input, request_overrides=None):
         # TODO: This signal is recognized on Windows, and calls the callback, but the entire
         # process is still killed.
@@ -814,10 +783,7 @@ class Repl:
             return
 
         request_overrides = request_overrides or {}
-        # TODO: Remove this when o1 models support streaming.
-        if self.stream and not self.is_openai_o1_series():
-        # TODO: Enable this when o1 models support streaming
-        # if self.stream:
+        if self.stream:
             request_overrides["print_stream"] = True
             ##print("")
             success, response, user_message = self.backend.ask_stream(
@@ -837,7 +803,6 @@ class Repl:
             else:
                 return success, response, user_message
 
-        self._write_log(input, response)
         self._update_message_map()
 
     def command_read(self, _):
@@ -903,17 +868,6 @@ class Repl:
             return
         self.default(fileprompt)
 
-    def _open_log(self, filename):
-        try:
-            if os.path.isabs(filename):
-                self.logfile = open(filename, "a", encoding="utf-8")
-            else:
-                self.logfile = open(os.path.join(os.getcwd(), filename), "a", encoding="utf-8")
-        except Exception:
-            util.print_markdown(f"Failed to open log file {filename!r}.")
-            return False
-        return True
-
     def command_log(self, arg):
         """
         Enable/disable logging to a file
@@ -926,10 +880,12 @@ class Repl:
             Disable logging: {COMMAND}
         """
         if arg:
-            if self._open_log(arg):
+            if self.backend.open_log(arg):
                 util.print_markdown(f"* Logging enabled, appending to {arg!r}.")
+            else:
+                util.print_markdown(f"Failed to open log file {arg!r}.")
         else:
-            self.logfile = None
+            self.backend.close_log()
             util.print_markdown("* Logging is now disabled.")
 
     # TODO: Decide if this should be revived.
@@ -954,7 +910,6 @@ class Repl:
     #         conversation_id if conversation_id != "None" else None
     #     )
     #     self._update_message_map()
-    #     self._write_log_context()
 
     def command_model(self, arg):
         """
@@ -1367,7 +1322,7 @@ class Repl:
 * Logging to: %s
 """ % (
             str(self.stream),
-            self.logfile and self.logfile.name or "None",
+            self.backend.logfile and self.backend.logfile.name or "None",
         )
         output += self.backend.get_runtime_config()
         util.print_markdown(output)

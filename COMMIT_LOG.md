@@ -1,3 +1,27 @@
+### v0.22.3 - 12/19/2024
+
+* **Thu Dec 19 2024:** o1
+* **Sat Dec 07 2024:** bump custom textract version
+* **Thu Nov 21 2024:** move file logging from REPL to API backend, clean up formatting
+
+### v0.22.2 - 11/21/2024
+
+* **Thu Nov 21 2024:** add chatgpt-4o-latest/gpt-4o-2024-11-20 to chat_openai provider
+* **Thu Nov 21 2024:** support streaming for o1 models
+* **Sun Nov 03 2024:** more robust parsing of editor setting
+
+### v0.22.1 - 11/03/2024
+
+* **Sun Nov 03 2024:** better error handling when no conversation_id provided
+* **Sun Nov 03 2024:** use notepad for default windows editor
+* **Sun Nov 03 2024:** Fix #224 /editor commands on Windows leave stray temp files
+* **Mon Oct 14 2024:** titlize extracted title for file summarizer workflow
+* **Sat Oct 05 2024:** support multiple queries in transaction SQL Ansible module
+* **Sat Oct 05 2024:** improve text_extractor module - add pymupdf4llm support - add default_extension arg, defaults to .pdf
+* **Mon Sep 30 2024:** switch backend default model to gpt-4o-mini
+* **Mon Sep 30 2024:** fix broken token counting test
+* **Thu Sep 26 2024:** support LWE_CONFIG_DIR/LWE_DATA_DIR env vars in workflows
+
 ### v0.22.0 - 09/25/2024
 
 #### **:fire_engine:Breaking Changes:fire_engine:**

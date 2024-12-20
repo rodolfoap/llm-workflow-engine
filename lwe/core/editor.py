@@ -1,83 +1,93 @@
 import os
 import subprocess
 import platform
+import shlex
 
 import lwe.core.util as util
 
 SYSTEM = platform.system()
 
-WINDOWS_EDITORS = ["micro", "nano", "vim"]
+DEFAULT_EDITOR_NIX = "vi"
+DEFAULT_EDITOR_OS_X = "vim"
+DEFAULT_EDITOR_WINDOWS = "notepad"
 
 
 def get_environment_editor(default=None):
     """
     Fetches the preferred editor from the environment variables.
 
-    This function checks the environment variables 'VISUAL' and 'EDITOR' in order to determine the user's preferred editor.
-    If neither of these variables are set, it returns a default value.
+    This function checks the following environment variables in order to
+    determine the user's preferred editor:
+
+     - LWE_EDITOR
+     - VISUAL
+     - EDITOR
 
     :param default: The default editor to return if no environment variable is set.
     :type default: str or None
     :return: The preferred editor as specified by environment variables or the default value.
     :rtype: str or None
     """
-    editor = os.environ.get("VISUAL", os.environ.get("EDITOR", default))
+    editor = os.environ.get("LWE_EDITOR", os.environ.get("VISUAL", os.environ.get("EDITOR", default)))
     return editor
 
 
 def discover_editor():
-    command_parts = []
+    """
+    Discovers and returns the appropriate editor command as a list of arguments.
+
+    Handles cases where the editor command includes arguments, including quoted arguments
+    with spaces (e.g. 'vim -c "set noswapfile"').
+
+    :return: A list of command parts ready for subprocess execution
+    :rtype: list[str]
+    """
     if SYSTEM == "Windows":
-        editor_executable = get_environment_editor()
-        if (
-            editor_executable
-            and os.path.isfile(editor_executable)
-            and os.access(editor_executable, os.X_OK)
-        ):
-            command_parts = [editor_executable]
-        else:
-            executables_search = editor_executable and [editor_executable] or WINDOWS_EDITORS
-            for editor in executables_search:
-                try:
-                    editor_paths = (
-                        subprocess.check_output(f"where {editor}", shell=True).decode().strip()
-                    )
-                    break
-                except subprocess.CalledProcessError:
-                    continue
-            if editor_paths:
-                editor_path = editor_paths.splitlines()[0].strip()
-                command_parts = [editor_path]
-            else:
-                raise Exception("No Windows editor found, tried: " + ", ".join(WINDOWS_EDITORS))
+        default_editor = DEFAULT_EDITOR_WINDOWS
     elif SYSTEM == "Darwin":
-        editor_path = get_environment_editor()
-        command_parts = [editor_path] if editor_path else ["open", "-t"]
+        default_editor = DEFAULT_EDITOR_OS_X
     else:
-        editor_path = get_environment_editor("vi")
-        command_parts = [editor_path]
-    return command_parts
+        default_editor = DEFAULT_EDITOR_NIX
+    editor = get_environment_editor(default_editor)
+    try:
+        return shlex.split(editor)
+    except ValueError as e:
+        raise RuntimeError(f"Invalid editor command format '{editor}': {e}")
 
 
 def file_editor(filepath):
+    """
+    Opens the specified file in the system's configured editor.
+
+    :param filepath: Path to the file to edit
+    :type filepath: str
+    """
     command_parts = discover_editor()
     command_parts.append(filepath)
     subprocess.call(command_parts)
 
 
 def pipe_editor(input_data="", suffix=None):
+    """
+    Opens the system editor with optional input data and returns the edited content.
+
+    This function creates a temporary file with the provided input data, opens it in
+    the system editor, waits for the user to make changes and close the editor, then
+    reads and returns the modified content. The temporary file is deleted afterwards.
+
+    :param input_data: Initial content to populate the editor with
+    :type input_data: str
+    :param suffix: Optional file extension for the temporary file (e.g. '.txt', '.md')
+    :type suffix: str or None
+    :return: The edited content after the editor is closed
+    :rtype: str
+    """
     filepath = util.write_temp_file(input_data, suffix)
     file_editor(filepath)
     with open(filepath, "r") as f:
         output_data = f.read()
-    # This is ugly, but Windows is throwing an error on deletion of the temp file.
-    if SYSTEM == "Windows":
-        print(
-            f"Deletion of temporary files on Windows is not currently supported, editor content was saved to {filepath!r}, and can be deleted manually if desired"
-        )
-        print(
-            "If you'd like to help fix this issue, see https://github.com/llm-workflow-engine/llm-workflow-engine/issues/224"
-        )
-    else:
+    try:
         os.remove(filepath)
+    except PermissionError:
+        util.print_status_message(False, f"WARNING: Unable to delete temporary file {filepath!r}. You may need to delete it manually.")
     return output_data
